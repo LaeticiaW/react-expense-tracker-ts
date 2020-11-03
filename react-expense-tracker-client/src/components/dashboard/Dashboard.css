@@ -1,0 +1,15 @@
+
+.react-grid-item.hide {
+    display: none !important;
+  }
+  
+  .react-grid-item.maximize {
+    position: absolute !important;
+    transform: none !important;
+
+    top: 0px !important;
+    left: 0px !important;
+    width: 100% !important;
+    height: calc(100vh - 150px) !important;
+  }
+  
