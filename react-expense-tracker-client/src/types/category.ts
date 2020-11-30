@@ -32,9 +32,21 @@ export interface CategoryMap {
     [categoryId: string] : Category
 } 
 
+export interface SelectCategoryMap {
+    [value: string] : string
+}
+
 export interface SubcategoryMap {
     [subcategoryId: string] : Subcategory
-} 
+}
+
+export interface CategoryInfo {
+    categories: Category[]
+    selectCategories: CategorySelectItem[]
+    categoryMap: CategoryMap
+    subcategories: Subcategory[]
+    subcategoryMap: SubcategoryMap
+}
 
 export type CategoryOrSubcategory = Category | Subcategory
 

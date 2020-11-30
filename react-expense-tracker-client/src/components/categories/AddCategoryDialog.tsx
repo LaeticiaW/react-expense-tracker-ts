@@ -1,9 +1,9 @@
-import React, { useState, useRef, ChangeEvent, useContext } from 'react'
+import React, { useState, useRef, useContext } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider } from '@material-ui/core'
 import CategoryService from '../../services/category'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
 import FormTextField from '../common/form/FormTextField'
-import { CategoryContext } from './context'
+import { CategoryContext } from './CategoryContext'
 import { Category } from 'types'
 
 const useStyles = makeStyles((theme : Theme) => createStyles({
@@ -54,8 +54,8 @@ export default React.memo(function AddCategoryDialog({ open, onClose } : Props) 
     }
 
     // Update the state as the user inputs form values
-    const handleChange = (event : ChangeEvent<HTMLInputElement>) => {        
-        const newState = { ...state, [event.target.name]: event.target.value }              
+    const handleChange = (value: string, name: string) => {        
+        const newState = { ...state, [name]: value }
         updateState(newState)
         validate(newState)
     }

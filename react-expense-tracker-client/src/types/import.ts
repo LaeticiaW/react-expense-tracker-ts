@@ -15,16 +15,29 @@ export interface ImportDetails {
     dateFormat?: string
 }
 
+export interface ImportFormData {
+    csvFile?: File
+    description: string
+    dateFormat: string
+    negativeExpenses: boolean
+    hasHeaderRow: boolean
+    dateField: string
+    amountField: string | number
+    descriptionField: string
+}
+
 export interface ImportExpense {
     amount: number | string
-    categoryId?: string | null
+    categoryId?: string | undefined
     description: string
     importId?: string
-    subcategoryId: string | null
+    subcategoryId: string | undefined
     trxDate: string
 }
 
 export interface ImportFilter {
-    startDate: string | null
-    endDate: string | null   
+    startDate: string
+    startDateMs?: number
+    endDate: string
+    endDateMs?: number 
 }

@@ -1,6 +1,8 @@
 import axios from 'axios'
 import dayjs from 'dayjs'
 import numeral from 'numeral'
+import { Expense, NewExpense, ExpenseFilter, ExpenseSummary, ExpenseSummaryRaw, ExpenseTimeseries, 
+    ImportExpense, ImportDetails, Series, SeriesData } from 'types'
 
 export default {
     expenseUrl: 'http://localhost:3000/expense/',
@@ -9,7 +11,7 @@ export default {
      * Retrieve the expense list
      * @param {object} filter - filter values to use when retrieving the expenses
      */
-    getExpenses(filter) {
+    getExpenses(filter : ExpenseFilter) {
         return axios.get(this.expenseUrl, {
             params: {
                 startDate: filter.startDate,
@@ -29,18 +31,18 @@ export default {
      * Save an expense, either via create or update
      * @param {object} expense - expense object to save
      */
-    saveExpense(expense) {
-        if (expense._id === undefined) {
-            return this.createExpense(expense)
-        }
-        return this.updateExpense(expense)
+    saveExpense(expense : Partial<Expense>) {
+        if ('_id' in expense) {
+            return this.updateExpense(expense as Expense)
+        }             
+        return this.createExpense(expense as NewExpense)
     },
 
     /*
      * Create a new expense
      * @param {object} expense - expense object to save
      */
-    createExpense(expense) {
+    createExpense(expense : NewExpense) {
         return axios({
             url: this.expenseUrl,
             method: 'POST',
@@ -55,7 +57,7 @@ export default {
      * Update an existing expense
      * @param {object} expense - expense object to update
      */
-    updateExpense(expense) {
+    updateExpense(expense : Expense) {
         return axios({
             url: this.expenseUrl + expense._id,
             method: 'PUT',
@@ -70,7 +72,7 @@ export default {
      * Delete an expense
      * @param {string} expenseId - id of expense to delete
      */
-    deleteExpense(expenseId) {
+    deleteExpense(expenseId : number) {
         return axios({
             url: this.expenseUrl + expenseId,
             method: 'DELETE'
@@ -84,7 +86,7 @@ export default {
      * Get expense totals by categories and subcategory
      * @param {object} filter - filter values to use when retrieving the expense totals
      */
-    getExpenseTotals(filter) {
+    getExpenseTotals(filter : ExpenseFilter) {
         return axios.get(`${this.expenseUrl}totals`, {
             params: {
                 startDate: filter.startDate,
@@ -98,14 +100,11 @@ export default {
             let prevCatId = ''
             let totalExpensesAmount = 0
             const expenseTotals = []
-            let categoryRecord = null
-            subcatTotals.forEach((record) => {
-                const { categoryId } = record._id
-                const { categoryName } = record
-                const { subcategoryId } = record._id
-                const { subcategoryName } = record
-                const { totalAmount } = record
-
+            let categoryRecord : ExpenseSummary = null!
+            subcatTotals.forEach((record : ExpenseSummaryRaw) => {
+                const { categoryId, subcategoryId } = record._id
+                const { categoryName, subcategoryName, totalAmount } = record
+                    
                 if (categoryId !== prevCatId) {
                     if (prevCatId !== '') {
                         expenseTotals.push(JSON.parse(JSON.stringify(categoryRecord)))
@@ -121,7 +120,7 @@ export default {
                     categoryRecord.totalAmount += totalAmount
                 }
 
-                if (subcategoryId) {
+                if (subcategoryId && subcategoryName) {
                     categoryRecord.subcategoryTotals.push({
                         subcategoryId,
                         subcategoryName,
@@ -152,7 +151,7 @@ export default {
      * Get expense totals by categories and subcategory
      * @param {object} filter - filter values to use when retrieving the expense time series data
      */
-    getExpenseTimeSeries(filter) {
+    getExpenseTimeSeries(filter : ExpenseFilter) {
         return axios.get(`${this.expenseUrl}timeseries`, {
             params: {
                 startDate: filter.startDate,
@@ -163,14 +162,18 @@ export default {
             const expenses = response.data
 
             // Convert to Highcharts time series format, one time series per categories
-            const series = []
-            let seriesObj = {}
-            let prevCatId = ''
+            const series : Series[] = []
+            let seriesObj : Series
+            let prevCatId : string = '-1' 
             let prevCatName = ''
-            let data = []
-            let dt
-            expenses.forEach((exp) => {
-                if (exp.categoryId !== prevCatId && prevCatId !== '') {
+            let data : SeriesData = []
+            let dt : number
+
+            expenses.forEach((exp : ExpenseTimeseries) => {                                       
+                if (exp.categoryId === null) {
+                    exp.categoryId = ''                    
+                }               
+                if (exp.categoryId !== prevCatId && prevCatId !== '-1') {
                     seriesObj = {
                         name: prevCatName,
                         data: data
@@ -178,8 +181,10 @@ export default {
                     series.push(seriesObj)
                     data = []
                 }
-                dt = dayjs(`${exp.trxYear.toString()}-${numeral(exp.trxMonth).format('00')}-01`, 'YYYY-MM-DD').valueOf()
-                data.push([dt, Number(exp.totalAmount.toFixed(2))])
+                if (exp.trxYear) {
+                   dt = dayjs(`${exp.trxYear.toString()}-${numeral(exp.trxMonth).format('00')}-01`, 'YYYY-MM-DD').valueOf()
+                   data.push([dt, Number(exp.totalAmount.toFixed(2))])
+                }
 
                 prevCatId = exp.categoryId
                 prevCatName = exp.categoryName || 'Unknown'
@@ -190,7 +195,7 @@ export default {
                     data: data
                 }
                 series.push(seriesObj)
-            }
+            }           
             return series
         }).catch((error) => {
             console.error('ExpenseService.getExpenseTimeSeries error:', error.response ? error.response : error)
@@ -203,14 +208,14 @@ export default {
      * @param {array} expenses - array of expense objects
      * @param {object} importDetails - details of the import
      */
-    importExpenses(expenses, importDetails) {
+    importExpenses(expenses : ImportExpense[], importDetails : ImportDetails) {
         // Normalize the trxDate to 'YYYY-MM-DD' and remove $ from amount
-        expenses.forEach((exp) => {            
+        expenses.forEach((exp : ImportExpense) => {            
             exp.trxDate = dayjs(exp.trxDate, importDetails.dateFormat).format('YYYY-MM-DD')
 
-            if (typeof exp.amount === 'string' && exp.amount.substr(0, 1) === '$') {
-                exp.amount = exp.amount.substr(1)
-            }
+            // if (typeof exp.amount === 'string' && exp.amount.substr(0, 1) === '$') {
+            //     exp.amount = exp.amount.substr(1)
+            // }
         })
 
         return axios.post(`${this.expenseUrl}import`, {
@@ -228,7 +233,7 @@ export default {
      * Delete expenses by import id
      * @param {string} importId - import id
      */
-    deleteExpensesByImportId(importId) {
+    deleteExpensesByImportId(importId : string) {
         return axios({
             url: `${this.expenseUrl}import/${importId}`,
             method: 'DELETE'

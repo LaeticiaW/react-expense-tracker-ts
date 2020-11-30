@@ -1,15 +1,17 @@
 import React, { useState, useCallback } from 'react'
 import { Paper, IconButton } from '@material-ui/core'
 import { Edit as EditIcon, Delete as DeleteIcon } from '@material-ui/icons'
-import { Grid, TableHeaderRow, VirtualTable, TableSummaryRow } from '@devexpress/dx-react-grid-material-ui'
-import { SortingState, IntegratedSorting, SummaryState, IntegratedSummary, DataTypeProvider } from '@devexpress/dx-react-grid'
+import { Grid, TableHeaderRow, VirtualTable, Table, TableSummaryRow } from '@devexpress/dx-react-grid-material-ui'
+import { SortingState, IntegratedSorting, SummaryState, IntegratedSummary, Sorting, 
+    DataTypeProvider, DataTypeProviderProps, Column, SummaryItem } from '@devexpress/dx-react-grid'
 import ConfirmDialog from '../common/ConfirmDialog'
 import ExpenseDialog from './ExpenseDialog'
 import ActionCell from '../common/ActionCell'
 import Util from '../../services/util'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
+import { Expense, SelectCategory, CategoryMap } from 'types'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme : Theme) => createStyles({
     container: {
         height: 'calc(100vh - 240px)',
         '& > *': {            // for react grid virtualization when want table to fill container
@@ -19,7 +21,7 @@ const useStyles = makeStyles(theme => ({
     }
 }))
 
-const columns = [
+const columns : Column[] = [
     { name: 'trxDate', title: 'Date' },
     { name: 'description', title: 'Description' },
     { name: 'categoryName', title: 'Category' },
@@ -28,7 +30,7 @@ const columns = [
     { name: 'actions', title: 'Actions' }
 ]
 
-const columnExtensions = [
+const columnExtensions : VirtualTable.ColumnExtension[] = [
     { columnName: 'trxDate' },
     { columnName: 'description', width: 300 },
     { columnName: 'categoryName' },
@@ -37,24 +39,38 @@ const columnExtensions = [
     { columnName: 'actions', align: 'center' }
 ]
 
-const sortColumnExtensions = [
+const sortColumnExtensions : SortingState.ColumnExtension[] = [
     { columnName: 'actions', sortingEnabled: false }
 ]
 
-const defaultSorting = [
+const defaultSorting : Sorting[] = [
     { columnName: 'trxDate', direction: 'desc' }
 ]
 
-const summaryItems = [
+const summaryItems : SummaryItem[] = [
     { columnName: 'trxDate', type: 'count' }
 ]
 
-const decimalColumns = ['amount']
+const decimalColumns : string[] = ['amount']
 
-export default React.memo(function ExpensesTable({ expenses, handleDelete, handleUpdate }) {
+interface State {
+    confirmDialogOpen: boolean
+    expenseDialogOpen: boolean
+    dialogExpense: Partial<Expense>
+    selectCategories: SelectCategory[]
+    categoryMap: CategoryMap
+}
+
+interface Props {
+    expenses: Expense[]
+    handleDelete: (expense : Partial<Expense>) => void
+    handleUpdate: (refresh: boolean) => void
+}
+
+export default React.memo(function ExpensesTable({ expenses, handleDelete, handleUpdate } : Props) {
     const classes = useStyles()
 
-    const [state, setState] = useState({
+    const [state, setState] = useState<State>({
         confirmDialogOpen: false,
         expenseDialogOpen: false,
         dialogExpense: {},
@@ -63,26 +79,28 @@ export default React.memo(function ExpensesTable({ expenses, handleDelete, handl
     })    
 
     // Update state
-    const updateState = useCallback((newState) => {
+    const updateState = useCallback((newState : Partial<State>) => {
         setState(state => ({ ...state, ...newState }))
     }, [setState])
 
     // Get the table row id
-    const getRowId = expense => expense._id
+    const getRowId = (expense : Expense) : string => expense._id
 
     // Decimal formatter for a table cell
-    const DecimalFormatter = ({ value }) => (Util.formatAmount(value))
-    const DecimalTypeProvider = props => (
+    const DecimalFormatter : React.FC<DataTypeProvider.ValueFormatterProps> = ({ value }) => {
+        return (<span>{Util.formatAmount(value)}</span>)
+    }
+    const DecimalTypeProvider = (props : DataTypeProviderProps) => (
         <DataTypeProvider formatterComponent={DecimalFormatter} {...props} />
     )
 
     // Open the confirm delete dialog
-    const confirmDelete = (expense) => {
+    const confirmDelete = (expense : Expense) => {
         updateState({ dialogExpense: expense, confirmDialogOpen: true })
     }
 
     // Show the update expense dialog
-    const showExpenseDialog = (expense) => {
+    const showExpenseDialog = (expense : Expense) => {
         updateState({ dialogExpense: expense, expenseDialogOpen: true })
     }
 
@@ -98,7 +116,7 @@ export default React.memo(function ExpensesTable({ expenses, handleDelete, handl
     }
 
     // Close the expense dialog
-    const handleCloseDialog = useCallback((refresh) => {
+    const handleCloseDialog = useCallback((refresh : boolean) => {
         if (refresh) {
             handleUpdate(refresh)
         }
@@ -106,7 +124,7 @@ export default React.memo(function ExpensesTable({ expenses, handleDelete, handl
     }, [handleUpdate, updateState])
 
     // Cell component for the table, including a custom actions cell
-    const Cell = (props) => {
+    const Cell = (props : Table.DataCellProps) => {
         const expense = props.row
         const columnName = props.column.name
 
@@ -114,7 +132,7 @@ export default React.memo(function ExpensesTable({ expenses, handleDelete, handl
             return (
                 <ActionCell>
                     <IconButton size="small" onClick={() => showExpenseDialog(expense)}>
-                        <EditIcon color="primary" className={classes.icon} />
+                        <EditIcon color="primary"/>
                     </IconButton>
                     <IconButton size="small" onClick={() => confirmDelete(expense)}>
                         <DeleteIcon />
@@ -135,7 +153,7 @@ export default React.memo(function ExpensesTable({ expenses, handleDelete, handl
                     <SummaryState totalItems={summaryItems} />
                     <IntegratedSummary />
                     <VirtualTable
-                        height="auto" width="auto"
+                        height="auto" 
                         columnExtensions={columnExtensions} cellComponent={Cell} />
                     <TableHeaderRow showSortingControls />
                     <TableSummaryRow />

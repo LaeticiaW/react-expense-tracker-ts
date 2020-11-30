@@ -1,13 +1,13 @@
 import React, { useEffect, useContext } from 'react'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
-import { TreeDataState, CustomTreeData, SelectionState } from '@devexpress/dx-react-grid'
+import { TreeDataState, CustomTreeData, SelectionState, Column } from '@devexpress/dx-react-grid'
 import { Grid, Table, TableTreeColumn, TableSelection } from '@devexpress/dx-react-grid-material-ui'
 import { IconButton } from '@material-ui/core'
 import { Delete as DeleteIcon, Add as AddIcon } from '@material-ui/icons'
 import ActionCell from '../common/ActionCell'
 import { CategoryActionCreators } from './actions/categoryActions'
 import { Category, Subcategory } from 'types'
-import { CategoryContext } from './context'
+import { CategoryContext } from './CategoryContext'
 
 const useStyles = makeStyles((theme : Theme) => createStyles({
     icon: {
@@ -15,15 +15,15 @@ const useStyles = makeStyles((theme : Theme) => createStyles({
     }
 }))
 
-const getChildRows = (row : any, rootRows : any) => (row ? row.subcategories : rootRows)
-const getRowId = (row : any) => row.parentTreeId ? row.id : row._id
+const getChildRows = (row: Category, rootRows : Category[]) => (row ? row.subcategories : rootRows)
+const getRowId = (row : Category & {id: string}) => row.parentTreeId ? row.id : row._id
 
-const columns = [
+const columns : Column[] = [
     { name: 'name' },
     { name: 'actions' }
 ]
 
-const columnExtensions = [
+const columnExtensions :  Table.ColumnExtension[] = [
     { columnName: 'name', width: 250 },
     { columnName: 'actions', width: 50 }
 ]
@@ -51,7 +51,7 @@ export default React.memo(function CategoryTable() {
 
     
     // Determine if the specified item is a category or a subcategory     
-    const isSubcategory = (item : Subcategory | Category) => {
+    const isSubcategory = (item : Subcategory | Category) : item is Subcategory => {
         if (item.parentTreeId !== undefined) {
             return true
         }
@@ -65,9 +65,10 @@ export default React.memo(function CategoryTable() {
             selectedItemId = selectedItemIds[selectedItemIds.length - 1]
         }
 
-        let selectedItem : any = undefined
+        let selectedItem : Category | Subcategory = undefined!
         if (selectedItemId) {
-            selectedItem = categoryState.categoryMap[selectedItemId] || categoryState.subcategoryMap[selectedItemId]
+            selectedItem = categoryState.categoryMap[selectedItemId]|| 
+                categoryState.subcategoryMap[selectedItemId]
         }
 
         if (selectedItem) {
@@ -106,7 +107,7 @@ export default React.memo(function CategoryTable() {
     }
 
     // Cell component with custom Actions cell
-    const Cell = (props : any) => {
+    const Cell = (props : Table.DataCellProps) => {
         const columnName = props.column.name
         const item = props.row
         const isCategory = !!item._id

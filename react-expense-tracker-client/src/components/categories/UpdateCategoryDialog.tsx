@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react'
+import React, { useState } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton } from '@material-ui/core'
 import { Delete as DeleteIcon, Add as AddIcon } from '@material-ui/icons'
 import CategoryService from '../../services/category'
@@ -58,7 +58,7 @@ export default React.memo(function UpdateCategoryDialog({ open, onClose, categor
         focus: true,
         isSaving: false
     })
-    const [errors, setErrors] = useState({ name: '', newSubcategory: '' })
+    const [errors, setErrors] = useState<Record<string, string>>({ name: '', newSubcategory: '' })
 
     // Update state
     const updateState = (newState: Partial<State>) => {
@@ -135,7 +135,7 @@ export default React.memo(function UpdateCategoryDialog({ open, onClose, categor
 
     // Validate all form fields
     const validateAllFields = () => {        
-        let formErrors = {} as any
+        let formErrors : Record<string, string> = {}
         formErrors.name = validateField('name', state.dialogCategory.name)
         setErrors(formErrors)
 
@@ -174,9 +174,7 @@ export default React.memo(function UpdateCategoryDialog({ open, onClose, categor
     }
 
     // Update state when field values change
-    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const name = event.target.name
-        const value = event.target.value
+    const handleChange = (value: string, name: string) => {      
         if (name === 'newSubcategory') {
             updateState({ ...state, newSubcategory: value })
         } else {

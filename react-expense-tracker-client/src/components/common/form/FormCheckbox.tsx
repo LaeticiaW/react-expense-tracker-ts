@@ -12,17 +12,21 @@ interface Props {
     id: string
     label: string
     value?: boolean
-    onChange: (event : ChangeEvent<HTMLInputElement>, checked: boolean) => void
+    onChange: (value: boolean, name: string) => void
 }
 
 export default React.memo(function FormCheckbox({ id, label, value, onChange } : Props) {
     const classes = useStyles()
 
+    const handleChange = (event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
+        onChange(checked, event.target.name)
+    }
+
     return (
         <div className={classes.inputControl}>
             <FormControlLabel label={label}
                 control={
-                    <Checkbox checked={value} onChange={onChange}
+                    <Checkbox checked={value} onChange={handleChange}
                         id={id} name={id} color="primary" />
                 }
             />

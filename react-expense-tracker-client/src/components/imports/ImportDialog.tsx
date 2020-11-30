@@ -1,18 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, ChangeEvent } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider } from '@material-ui/core'
 import { Card, CardContent, CardHeader } from '@material-ui/core'
 import CategoryService from '../../services/category'
 import ExpenseService from '../../services/expense'
 import ImportUtil from '../../services/importUtil'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
 import dayjs from 'dayjs'
 import FormSelect from '../common/form/FormSelect'
 import FormTextField from '../common/form/FormTextField'
 import FormFileInput from '../common/form/FormFileInput'
 import FormCheckbox from '../common/form/FormCheckbox'
 import ConfirmDialog from '../common/ConfirmDialog'
+import { ImportExpense, ImportDetails, ImportFormData, Category } from 'types'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme : Theme) => createStyles({
     dialogContent: {
         width: '735px',
         padding: '16px 24px 24px 24px'
@@ -64,8 +65,8 @@ const defaultErrors = {
     descriptionField: ''
 }
 
-const defaultFormValues = {
-    csvFile: '',
+const defaultFormValues : ImportFormData = {
+    csvFile: undefined,
     description: '',
     dateFormat: '',
     negativeExpenses: false,
@@ -75,17 +76,22 @@ const defaultFormValues = {
     descriptionField: ''
 }
 
-export default React.memo(function ImportDialog({ open, handleClose }) {
+interface Props {
+    open: boolean
+    handleClose: (refresh: boolean) => void
+}
+
+export default React.memo(function ImportDialog({ open, handleClose } : Props) {
     const classes = useStyles()
 
-    const [categories, setCategories] = useState([])
-    const [expenses, setExpenses] = useState([])
-    const [dialogMsg, setDialogMsg] = useState()
-    const [formData, setFormData] = useState({ ...defaultFormValues })
-    const [errors, setErrors] = useState({ ...defaultErrors })
+    const [categories, setCategories] = useState<Category[]>([])
+    const [expenses, setExpenses] = useState<ImportExpense[]>([])
+    const [dialogMsg, setDialogMsg] = useState('')
+    const [formData, setFormData] = useState<ImportFormData>({ ...defaultFormValues })
+    const [errors, setErrors] = useState<Record<string, string>>({ ...defaultErrors })
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
-    const [confirmImportMsg, setConfirmImportMsg] = useState('')
-    const [importRecords, setImportRecords] = useState([])
+    const [confirmImportMsg, setConfirmImportMsg] = useState<JSX.Element>(<span/>)
+    const [importRecords, setImportRecords] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
 
     // Initialize state whenever the dialog opens
@@ -110,7 +116,7 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
     }
 
     // Formulate the confirmation message that displays the parsed first expense record
-    const getImportConfirmationMsg = (parsedExpense) => {
+    const getImportConfirmationMsg = (parsedExpense : ImportExpense) : JSX.Element => {
         return (
             <div>
                 <p>Parsed fields from the first record are displayed below.  Are you sure you want to continue the import?</p>
@@ -123,13 +129,13 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
     
     // Import the expenses from the CSV file   
     const handleConfirmImport = async () => {
-        setDialogMsg(null)
+        setDialogMsg('')
         setExpenses([])
        
         if (validateAllFields()) {
             // Read the records from the import file
-            let impRecords = []
-            await ImportUtil.readImportFile(formData).then((records) => {
+            let impRecords : string[] = []
+            await ImportUtil.readImportFile(formData).then((records : string[]) => {
                 impRecords = records
                 setImportRecords(records)
             }).catch((error) => {
@@ -160,9 +166,9 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
         setLoading(true)
 
         // Create expense objects for each import file record
-        importRecords.forEach((rec, idx) => {
+        importRecords.forEach((rec : string, idx : number) => {
             if (!formData.hasHeaderRow || idx > 0) {
-                const exp = ImportUtil.getExpenseObject(rec, formData, categories)
+                const exp : ImportExpense | null = ImportUtil.getExpenseObject(rec, formData, categories)
                 if (exp) {
                     expenses.push(exp)
                 }
@@ -170,9 +176,9 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
         })
 
         // Create an import details summary object
-        const importDetails = {
+        const importDetails : ImportDetails = {
             importDate: dayjs().format('YYYY-MM-DD'),
-            fileName: formData.csvFile.name,
+            fileName: formData.csvFile!.name,
             description: formData.description,
             recordCount: expenses.length,
             dateFormat: formData.dateFormat
@@ -191,15 +197,18 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
     }
 
     // Update state when the form data changes
-    const handleChange = (event) => {
-        const name = event.target.name
-        const value = event.target.type === "checkbox" ? event.target.checked : event.target.value
+    const handleChange = (value: string, name: string) => {       
+        setFormData({ ...formData, [name]: value })
+        validateField(name, value)
+    }
+
+    const handleCheckboxChange = (value: boolean, name: string) => {
         setFormData({ ...formData, [name]: value })
         validateField(name, value)
     }
 
     // Update state when the input csv file changes
-    const handleFileChange = (event) => {
+    const handleFileChange = (event : ChangeEvent<HTMLInputElement>) => {
         const name = 'csvFile'
         const value = event.target.files ? event.target.files[0] : formData.csvFile
         setFormData({ ...formData, [name]: value })
@@ -207,7 +216,7 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
     }
 
     // Validate a form field
-    const validateField = (name, value) => {
+    const validateField = (name : string, value : string | number | boolean | undefined | null | File) => {
         let error = ''
         if (name !== 'negativeExpenses' && value === '') {
             error = 'Value is required'
@@ -218,7 +227,7 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
 
     // Validate all form fields
     const validateAllFields = () => {
-        let formErrors = {}
+        let formErrors : Record<string, string> = {}
         formErrors.csvFile = validateField('csvFile', formData.csvFile)
         formErrors.description = validateField('description', formData.description)
         formErrors.dateFormat = validateField('dateFormat', formData.dateFormat)
@@ -249,15 +258,15 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
     return (
         <div>
             <Dialog open={open} onEnter={handleOpen} maxWidth="md" BackdropProps={{ style: { backgroundColor: "transparent" } }}>
-                <DialogTitle className={classes.dialogTitle}>Import Expenses</DialogTitle>
+                <DialogTitle>Import Expenses</DialogTitle>
                 <DialogContent className={classes.dialogContent}>
                     <div className={classes.dialogMsg}>{dialogMsg}</div>
-                    <form className={classes.form} noValidate autoComplete="off">
+                    <form noValidate autoComplete="off">
                         <div className={classes.formRow}>
-                            <div className={classes.formColumn}>
+                            <div>
                                 <Card className={classes.card}>
                                     <CardHeader title="File Info" classes={{ title: classes.cardTitle, root: classes.cardHeaderRoot }} />
-                                    <CardContent className={classes.cardContent}>
+                                    <CardContent>
                                         <FormFileInput id="csvFile" value={formData.csvFile} label="File Name" onChange={handleFileChange}
                                             error={Boolean(errors.csvFile)} helperText={errors.csvFile} />
                                         <FormTextField id="description" value={formData.description} label="Description" onChange={handleChange}
@@ -266,14 +275,14 @@ export default React.memo(function ImportDialog({ open, handleClose }) {
                                             onChange={handleChange} selectList={dateFormats}
                                             error={Boolean(errors.dateFormat)} helperText={errors.dateFormat} />
                                         <FormCheckbox id="negativeExpenses" value={formData.negativeExpenses}
-                                            label="Expenses are Negative" onChange={handleChange} />
+                                            label="Expenses are Negative" onChange={handleCheckboxChange} />
                                     </CardContent>
                                 </Card>
                             </div>
-                            <div className={classes.formColumn}>
+                            <div>
                                 <Card className={classes.card}>
                                     <CardHeader title="File Structure" classes={{ title: classes.cardTitle, root: classes.cardHeaderRoot }} />
-                                    <CardContent className={classes.cardContent}>
+                                    <CardContent>
                                         <FormSelect id="dateField" value={formData.dateField} label="Date Field Position"
                                             onChange={handleChange} selectList={fieldPositions}
                                             error={Boolean(errors.dateField)} helperText={errors.dateField} />

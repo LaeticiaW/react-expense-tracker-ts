@@ -17,7 +17,7 @@ const useStyles = makeStyles((theme : Theme) => createStyles({
 
 interface Props {
     renderInputs: () => ReactNode
-    renderActions: () => ReactNode
+    renderActions?: () => ReactNode
 }
 
 export default React.memo(function TableFilter({renderInputs, renderActions} : Props) {

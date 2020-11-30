@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react'
+import React, { useState } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fab, IconButton } from '@material-ui/core'
 import { Delete as DeleteIcon, Add as AddIcon } from '@material-ui/icons'
 import CategoryService from '../../services/category'
@@ -79,9 +79,7 @@ export default React.memo(function UpdateSubcategoryDialog({ open, onClose, subc
     }
 
     // Update state when form values change
-    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const name = event.target.name
-        const value = event.target.value
+    const handleChange = (value: string, name: string) => {       
         if (name === 'newMatchText') {
             updateState({ [name]: value })
         } else {
@@ -105,7 +103,7 @@ export default React.memo(function UpdateSubcategoryDialog({ open, onClose, subc
     }
 
     // Validate form field
-    const validateField = (name: string, value: any) => {
+    const validateField = (name: string, value: string) => {
         let error = ''
         if (name === 'name' && value === '') {
             error = 'Value is required'

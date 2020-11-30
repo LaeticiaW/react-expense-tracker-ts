@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
 import SnackMsg from '../../common/SnackMsg'
 import Dashlet from '../Dashlet'
 import DateRangeInput from '../../common/DateRangeInput'
@@ -8,8 +8,9 @@ import ExpenseService from '../../../services/expense'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import Util from '../../../services/util'
+import { DashletOptions, Series, SnackMsgComponent } from 'types'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme : Theme) => createStyles({
     contentContainer: {
         position: 'relative',
         height: '100%'
@@ -23,9 +24,13 @@ const useStyles = makeStyles(theme => ({
     }
 }))
 
-export default React.memo(function ExpensesOverTimeChart({ options }) {
+interface Props {
+    options: DashletOptions
+}
+
+export default React.memo(function ExpensesOverTimeChart({ options } : Props) {
     const classes = useStyles()
-    const snackRef = useRef(null)
+    const snackRef = useRef<SnackMsgComponent>(null!)
 
     const [chartOptions, setChartOptions] = useState({})
     const [filter, setFilter] = useState({
@@ -37,11 +42,11 @@ export default React.memo(function ExpensesOverTimeChart({ options }) {
   
     // Get the expense time series data    
     const getExpenseTimeSeries = useCallback(() => {
-        ExpenseService.getExpenseTimeSeries(filter).then((series) => {
+        ExpenseService.getExpenseTimeSeries(filter).then((series : Series[]) => {
             setChartOptions(getChartOptions(series))
         }).catch((error) => {
             console.error('Error retrieving expense time series:', error)
-            snackRef.current.show(true, 'Error retrieving data for Expenses Over Time dashlet')            
+            snackRef!.current!.show(true, 'Error retrieving data for Expenses Over Time dashlet')            
         })
     }, [filter])
 
@@ -51,7 +56,7 @@ export default React.memo(function ExpensesOverTimeChart({ options }) {
     }, [filter, getExpenseTimeSeries])
     
     // Get the Highcharts options for the time series line chart    
-    const getChartOptions = (series) => {
+    const getChartOptions = (series : Series[]) => {
         const options = {
             chart: {
                 type: 'line'

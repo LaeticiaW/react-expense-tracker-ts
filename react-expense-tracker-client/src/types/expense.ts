@@ -36,9 +36,9 @@ export interface ExpenseSummary {
 }
 
 export interface SubcategoryTotal {
-    subcategoryId: string | null
-    subcategoryName: string | null
-    totalAmount: number | null
+    subcategoryId: string
+    subcategoryName: string
+    totalAmount: number
 }
 
 export interface ExpenseSummaryRaw {
@@ -52,7 +52,9 @@ export interface ExpenseSummaryRaw {
 }
 
 export interface ExpenseFilter {
-    startDate: string | null
-    endDate: string | null
+    startDate: string 
+    startDateMs?: number 
+    endDate: string
+    endDateMs?: number
     categoryIds: string[] | null
 }

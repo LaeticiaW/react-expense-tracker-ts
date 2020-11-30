@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Category, Subcategory, CategoryMap, SubcategoryMap, CategorySelectItem } from 'types'
+import { Category, CategoryInfo, Subcategory, CategoryMap, SubcategoryMap, CategorySelectItem } from 'types'
 
 export default {
     categoryUrl: 'http://localhost:3000/category/',
@@ -100,7 +100,7 @@ export default {
     /*
      * Retrieve the categories data and process it, returning the categories list, subcategory list, categories map, and subcategory map
      */
-    getCategoryInfo() {
+    getCategoryInfo() : Promise<CategoryInfo> {
         return this.getCategories().then((categories : Category[]) => {
             const selectCategories : CategorySelectItem[] = categories.map((item) => ({
                 _id: item._id,
@@ -129,7 +129,7 @@ export default {
                 categoryMap,
                 subcategories,
                 subcategoryMap
-            }
+            } as CategoryInfo
         }).catch((error) => {
             console.error('CategoryService.getCategoryInfo error', error.response ? error.response : error)
             return Promise.reject(error.response)

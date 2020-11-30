@@ -11,19 +11,29 @@ import DateRangeInput from '../common/DateRangeInput'
 import CategorySelect from '../common/CategorySelect'
 import SnackMsg from '../common/SnackMsg'
 import dayjs from 'dayjs'
+import { Expense, ExpenseFilter, SelectCategory, SelectCategoryMap, SnackMsgComponent } from 'types'
+
+interface State {
+    expenses: Expense[]
+    selectCategories: SelectCategory[]
+    categoryMap: SelectCategoryMap
+    dialogOpen: boolean
+    dialogExpense: Partial<Expense>
+    refreshExpenses: boolean
+}
 
 export default React.memo(function Expenses() {
-    const snackRef = useRef(null)
+    const snackRef = useRef<SnackMsgComponent>(null)
     
-    const [state, setState] = useState({
+    const [state, setState] = useState<State>({
         expenses: [],
         selectCategories: [],
         categoryMap: {},
         dialogOpen: false,
-        dialogExpense: null,
+        dialogExpense: {},
         refreshExpenses: false
     })
-    const [filter, setFilter] = useState({
+    const [filter, setFilter] = useState<ExpenseFilter>({
         categoryIds: [],
         startDate: dayjs().startOf('year').format('YYYY-MM-DD'),
         startDateMs: dayjs().startOf('year').valueOf(),
@@ -32,27 +42,27 @@ export default React.memo(function Expenses() {
     })
     
     // Update state
-    const updateState = (newState) => {
+    const updateState = (newState : Partial<State>) => {
         setState(state => ({ ...state, ...newState }))
     }
 
     // Update the filter state
-    const updateFilter = (newFilter) => {
+    const updateFilter = (newFilter : Partial<ExpenseFilter>) => {
         setFilter(filter => ({ ...filter, ...newFilter }))
     }
 
     // Retrieve category select data on mount and whenever the user changes the filter
     useEffect(() => {        
         const getCategorySelect = () => {
-            return CategoryService.getCategorySelect().then((selectCategories) => {
-                const categoryMap = selectCategories.reduce((map, cat) => {
+            return CategoryService.getCategorySelect().then((selectCategories : SelectCategory[]) => {
+                const categoryMap = selectCategories.reduce((map : SelectCategoryMap, cat : SelectCategory) => {
                     map[cat.value] = cat.label
                     return map
                 }, {})
                 updateState({ selectCategories: selectCategories, categoryMap: categoryMap })
             }).catch((error) => {
                 console.error('Error retrieving select categories:', error)
-                snackRef.current.show(true, 'Error retrieving category select data')
+                snackRef!.current!.show(true, 'Error retrieving category select data')
             })
         }
         getCategorySelect()
@@ -61,11 +71,11 @@ export default React.memo(function Expenses() {
     // Retrieve the expense data on mount and whenever the user changes the filter criteria
     useEffect(() => {       
         const getExpenses = () => {
-            return ExpenseService.getExpenses(filter, state.categoryMap).then((expenses) => {
+            return ExpenseService.getExpenses(filter).then((expenses) => {
                 updateState({ expenses: expenses, refreshExpenses: false })
             }).catch((error) => {
                 console.error('Error retrieving expenses:', error)
-                snackRef.current.show(true, 'Error retrieving expenses')
+                snackRef!.current!.show(true, 'Error retrieving expenses')
             })
         }        
         getExpenses()        
@@ -73,20 +83,20 @@ export default React.memo(function Expenses() {
 
     // Open the create expense dialog
     const handleOpenDialog = () => {
-        updateState({ dialogExpense: null, dialogOpen: true })
+        updateState({ dialogExpense: {}, dialogOpen: true })
     }
 
     // Close the create expense dialog
     const handleCloseDialog = useCallback((refresh) => {        
         updateState({ dialogOpen: false, refreshExpenses: refresh })
         if (refresh) {
-            snackRef.current.show(false, 'Expense added successfully')            
+            snackRef!.current!.show(false, 'Expense added successfully')            
         }
     }, [])
 
     // Update filter state when a date changes
     const handleDateChange = useCallback((startDate, startDateMs, endDate, endDateMs) => {
-        updateFilter({
+        updateFilter({            
             startDate: startDate,
             startDateMs: startDateMs,
             endDate: endDate,
@@ -95,24 +105,24 @@ export default React.memo(function Expenses() {
     }, [])
 
     // Update filter state when the category changes
-    const handleCategoryChange = useCallback((categoryIds) => {
+    const handleCategoryChange = useCallback((categoryIds : string[]) => {
         updateFilter({ categoryIds: categoryIds })
     }, [])
 
     // Close the expense dialog after an expense is updated, and retrieve the expenses list again
     const handleUpdate = useCallback(() => {
         updateState({ dialogOpen: false, refreshExpenses: true })        
-        snackRef.current.show(false, 'Expense updated successfully')        
+        snackRef!.current!.show(false, 'Expense updated successfully')        
     }, [])
 
     // Delete an expense
     const handleDelete = useCallback((expense) => {
         ExpenseService.deleteExpense(expense._id).then(() => {
             updateState({ refreshExpenses: true })
-            snackRef.current.show(false, 'Expense deleted successfully')
+            snackRef!.current!.show(false, 'Expense deleted successfully')
         }).catch((error) => {
             console.error('Error deleting expense:', error)
-            snackRef.current.show(true, 'Error deleting the expense')
+            snackRef!.current!.show(true, 'Error deleting the expense')
         })
     }, [])
 
@@ -121,7 +131,7 @@ export default React.memo(function Expenses() {
         return (
             <div>
                 <DateRangeInput startDate={filter.startDate} endDate={filter.endDate} handleDateChange={handleDateChange} />
-                <CategorySelect selectCategories={state.selectCategories} categoryMap={state.categoryMap} handleCategoryChange={handleCategoryChange} />
+                <CategorySelect selectCategories={state.selectCategories} categoryMap={state.categoryMap} onChange={handleCategoryChange} />
             </div>
         )
     }
@@ -131,7 +141,7 @@ export default React.memo(function Expenses() {
         return (
             <div>
                 <Fab size="small" color="primary" onClick={handleOpenDialog} className="add-expense-btn"
-                    margin="dense" title="Add Expense" role="button">
+                     title="Add Expense" role="button">
                     <AddIcon />
                 </Fab>
             </div>

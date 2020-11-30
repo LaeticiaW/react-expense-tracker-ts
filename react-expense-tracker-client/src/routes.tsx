@@ -19,7 +19,7 @@ export interface Meta {
 export interface NavRoute {
     name: string
     path: string
-    component?: any
+    component?: React.FC<any>
     redirectTo?: string
     meta: Meta    
 }

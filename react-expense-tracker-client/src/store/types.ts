@@ -34,7 +34,7 @@ export interface GetCurrentUserAction {
     type: typeof ActionType.GET_CURRENT_USER
     payload: {
         currentUser: CurrentUserType
-        error: any
+        error: string
     }
 }
 
@@ -42,7 +42,7 @@ export interface GetCurrentUserErrorAction {
     type: typeof ActionType.GET_CURRENT_USER_ERROR
     payload: {
         currentUser: CurrentUserType
-        error: any
+        error: string
     }
 }
 
@@ -52,7 +52,7 @@ export interface LoginAction {
     type: typeof ActionType.LOGIN
     payload: {
         currentUser: CurrentUserType
-        error: any
+        error: string
     }
 }
 
@@ -60,7 +60,7 @@ export interface LoginErrorAction {
     type: typeof ActionType.LOGIN_ERROR
     payload: {
         currentUser: CurrentUserType
-        error: any
+        error: string
     }
 }
 

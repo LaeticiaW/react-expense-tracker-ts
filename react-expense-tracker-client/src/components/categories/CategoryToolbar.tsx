@@ -8,8 +8,8 @@ import CategoryService from '../../services/category'
 import SnackMsg from '../common/SnackMsg'
 import ConfirmDialog from '../common/ConfirmDialog'
 import { CategoryActionCreators } from './actions/categoryActions'
-import { Category, Subcategory } from 'types'
-import { CategoryContext } from './context'
+import { Category, Subcategory, SnackMsgComponent } from 'types'
+import { CategoryContext } from './CategoryContext'
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
     toolbar: {
@@ -24,13 +24,13 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 export default React.memo(function CategoryToolbar() {
     const classes = useStyles()
-    const snackRef = useRef<any>(null)
+    const snackRef = useRef<SnackMsgComponent>(null)
     const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLAnchorElement | null>(null)
     const [openAddCategoryDialog, setOpenAddCategoryDialog] = useState(false)
     const { categoryState, categoryDispatch, getCategories } = useContext(CategoryContext)
 
     // Open the toolbar menu
-    const handleClickMenu = (event : any) => {
+    const handleClickMenu = (event : React.ChangeEvent<any>) => {
         setMenuAnchorEl(event.currentTarget)
     }
 
@@ -57,7 +57,7 @@ export default React.memo(function CategoryToolbar() {
         if (newCategory) {
             categoryDispatch(CategoryActionCreators.addCategory(newCategory))
             getCategories()
-            snackRef.current.show(false, 'Category added successfully')
+            snackRef!.current!.show(false, 'Category added successfully')
         }
     }
 
@@ -71,7 +71,7 @@ export default React.memo(function CategoryToolbar() {
                     categoryDispatch(CategoryActionCreators.resetExpandedCategoryRows(newSubcategory.parentCategoryId))
                 }
             }
-            snackRef.current.show(false, 'Subcategory added successfully')
+            snackRef!.current!.show(false, 'Subcategory added successfully')
         }
     }
 
@@ -122,13 +122,13 @@ export default React.memo(function CategoryToolbar() {
             CategoryService.deleteCategory(categoryState.selectedCategory._id).then(() => {
                 categoryDispatch(CategoryActionCreators.deleteCategory())
                 getCategories()
-                snackRef.current.show(false, 'Category deleted successfully')
+                snackRef!.current!.show(false, 'Category deleted successfully')
             }).catch((error) => {
                 console.error('Error deleting category:', error)
                 if (error && error.data && error.data === 'Category in use') {
-                    snackRef.current.show(true, 'Category cannot be deleted because it is already assigned to expenses')
+                    snackRef!.current!.show(true, 'Category cannot be deleted because it is already assigned to expenses')
                 } else {
-                    snackRef.current.show(true, 'Error deleting the category')
+                    snackRef!.current!.show(true, 'Error deleting the category')
                 }
             })
         }
@@ -159,10 +159,10 @@ export default React.memo(function CategoryToolbar() {
             CategoryService.updateCategory(category).then((cat) => {
                 categoryDispatch(CategoryActionCreators.deleteSubcategory(cat))
                 getCategories()
-                snackRef.current.show(false, "Subcategory deleted successfully")
+                snackRef!.current!.show(false, "Subcategory deleted successfully")
             }).catch((error) => {
                 console.error('Error deleting subcategory:', error)
-                snackRef.current.show(true, 'Error deleting the subcategory')
+                snackRef!.current!.show(true, 'Error deleting the subcategory')
             })
         }   
     }

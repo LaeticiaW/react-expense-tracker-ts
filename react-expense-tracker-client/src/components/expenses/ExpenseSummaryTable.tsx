@@ -1,12 +1,13 @@
-import React from 'react'
-import { SortingState, IntegratedSorting, RowDetailState, DataTypeProvider } from '@devexpress/dx-react-grid'
+import React, { useEffect, useState, FC } from 'react'
+import { SortingState, IntegratedSorting, RowDetailState, DataTypeProvider, Sorting, DataTypeProviderProps, Column } from '@devexpress/dx-react-grid'
 import { Grid, TableHeaderRow, Table, TableRowDetail } from '@devexpress/dx-react-grid-material-ui'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
 import Paper from '@material-ui/core/Paper'
 import Util from '../../services/util'
 import clsx from 'clsx'
+import { ExpenseSummary, SubcategoryTotal } from 'types'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme: Theme) => createStyles({
     container: {
         height: 'calc(100vh - 260px)',
         '& > *': {            // for react grid virtualization when want table to fill container
@@ -51,30 +52,43 @@ const useStyles = makeStyles(theme => ({
     }
 }))
 
-const columns = [
+const columns: Column[] = [
     { name: 'categoryName', title: 'Category' },
     { name: 'totalAmount', title: 'Amount' },
     { name: 'percent', title: 'Percent' }
 ]
 
-const columnExtensions = [
+const columnExtensions: Table.ColumnExtension[] = [
     { columnName: 'category', width: '30%' },
     { columnName: 'totalAmount', align: 'right', width: '30%' },
     { columnName: 'percent', align: 'right', width: '30%' }
 ]
 
-const defaultSorting = [
+const defaultSorting: Sorting[] = [
     { columnName: 'categoryName', direction: 'asc' }
 ]
 
-const decimalColumns = ['percent', 'totalAmount']
-const categoryColumns = ['categoryName']
+const decimalColumns: string[] = ['percent', 'totalAmount']
+const categoryColumns: string[] = ['categoryName']
 
-export default React.memo(function ExpenseSummaryTable({ expenseTotals, totalAmount, expandedRowIds }) {
+interface Props {
+    expenseTotals: ExpenseSummary[]
+    totalAmount: number
+    expandedRowIds: (string | number)[]
+}
+
+export default React.memo(function ExpenseSummaryTable({ expenseTotals, totalAmount, expandedRowIds }: Props) {
     const classes = useStyles()
 
+    const [expRowIds, setExpRowIds] = useState<(string | number)[]>(expandedRowIds);
+
+    // Keep the expanded row ids updated when the prop changes
+    useEffect(() => {
+        setExpRowIds(expandedRowIds)
+    }, [expandedRowIds])
+
     // Sort method for the subcategory totals
-    const subcatSort = (a, b) => {
+    const subcatSort = (a: SubcategoryTotal, b: SubcategoryTotal) => {
         if (a.subcategoryName.toLowerCase() < b.subcategoryName.toLowerCase()) {
             return -1
         } else if (a.subcategoryName.toLowerCase() > b.subcategoryName.toLowerCase()) {
@@ -85,26 +99,35 @@ export default React.memo(function ExpenseSummaryTable({ expenseTotals, totalAmo
     }
 
     // Table cell decimal formatter
-    const DecimalFormatter = ({ value }) => (Util.formatAmount(value))
-    const DecimalTypeProvider = props => (
+    const DecimalFormatter: FC<DataTypeProvider.ValueFormatterProps> = ({ value }) => {
+        return (<span>{Util.formatAmount(value)}</span>)
+    }
+
+    const DecimalTypeProvider = (props: DataTypeProviderProps) => (
         <DataTypeProvider formatterComponent={DecimalFormatter} {...props} />
     )
 
     // Table cell category formatter
-    const CategoryFormatter = ({ value }) => (value || 'Unknown')
-    const CategoryTypeProvider = props => (
+    const CategoryFormatter: FC<DataTypeProvider.ValueFormatterProps> = ({ value }) => {
+        return (<span>{value || 'Unknown'}</span>)
+    }
+    const CategoryTypeProvider = (props: DataTypeProviderProps) => (
         <DataTypeProvider formatterComponent={CategoryFormatter} {...props} />
     )
 
+    const onExpandedRowIdsChange = (rowIds: (string | number)[]) => {      
+        setExpRowIds(rowIds)
+    }
+
     // Render function for the expanded row detail
-    const RowDetail = ({ row }) => {
+    const RowDetail: FC<TableRowDetail.ContentProps> = ({ row }) => {
         const expenseTotal = row
 
         return (
             <>
                 {expenseTotal.subcategoryTotals.length ? (
-                    expenseTotal.subcategoryTotals.sort(subcatSort).map((subcat) => (
-                        <div className={classes.row} key={subcat.categoryid + subcat.subcategoryId}>
+                    expenseTotal.subcategoryTotals.sort(subcatSort).map((subcat: SubcategoryTotal) => (
+                        <div className={classes.row} key={expenseTotal.categoryid + subcat.subcategoryId}>
                             <div className={classes.column}>{subcat.subcategoryName}</div>
                             <div className={clsx(classes.columnAmount, classes.alignRight)}>{Util.formatAmount(subcat.totalAmount)}</div>
                         </div>
@@ -114,7 +137,7 @@ export default React.memo(function ExpenseSummaryTable({ expenseTotals, totalAmo
             </>
         )
     }
-    
+
     return (
         <div>
             <Paper className={classes.container} elevation={0}>
@@ -123,14 +146,13 @@ export default React.memo(function ExpenseSummaryTable({ expenseTotals, totalAmo
                     <IntegratedSorting />
                     <DecimalTypeProvider for={decimalColumns} />
                     <CategoryTypeProvider for={categoryColumns} />
-                    <RowDetailState />
-                    <Table height="auto" width="auto" columnExtensions={columnExtensions} />
+                    <RowDetailState
+                        defaultExpandedRowIds={expRowIds}
+                        expandedRowIds={expRowIds} 
+                        onExpandedRowIdsChange={onExpandedRowIdsChange}/>
+                    <Table columnExtensions={columnExtensions} />
                     <TableHeaderRow showSortingControls />
-                    <TableRowDetail
-                        contentComponent={RowDetail}
-                        defaultExpandedRowIds={expandedRowIds}
-                        expandedRowIds={expandedRowIds}
-                    />
+                    <TableRowDetail contentComponent={RowDetail} />
                 </Grid>
             </Paper>
 

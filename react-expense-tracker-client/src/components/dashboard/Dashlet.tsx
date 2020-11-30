@@ -1,11 +1,12 @@
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, ReactNode } from 'react'
 import { Fab, Toolbar, Divider, Paper } from '@material-ui/core'
 import { Fullscreen as FullScreenIcon, FullscreenExit as FullScreenExitIcon } from '@material-ui/icons'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
 import DashboardContext from './DashboardContext'
 import clsx from 'clsx'
+import { DashletOptions } from 'types'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme : Theme) => createStyles({
     dashlet: {
         position: 'relative',
         height: '100%',
@@ -14,7 +15,7 @@ const useStyles = makeStyles(theme => ({
     },
     dashletTitle: {
         fontSize: '1em',
-        flexGrow: '1',
+        flexGrow: 1,
         marginTop: '0px',
         marginBottom: '0px',
         paddingTop: '18px',
@@ -27,7 +28,13 @@ const useStyles = makeStyles(theme => ({
     }
 }))
 
-export default React.memo(function Dashlet({ options, renderActions, children }) {
+interface Props {
+    options: DashletOptions
+    renderActions: () => ReactNode,
+    children: ReactNode
+}
+
+export default React.memo(function Dashlet({ options, renderActions, children } : Props) {
     const classes = useStyles()
     const dashboardContext = useContext(DashboardContext)
 
@@ -50,14 +57,12 @@ export default React.memo(function Dashlet({ options, renderActions, children })
         return (
             <div>
                 {!expanded &&
-                    <Fab size="small" color="primary" onClick={handleMaximize} className={classes.fab}
-                        margin="dense" title="Maximize">
+                    <Fab size="small" color="primary" onClick={handleMaximize} title="Maximize">
                         <FullScreenIcon />
                     </Fab>
                 }
                 {expanded &&
-                    <Fab size="small" color="primary" onClick={handleMinimize} className={classes.fab}
-                        margin="dense" title="Minimize">
+                    <Fab size="small" color="primary" onClick={handleMinimize} title="Minimize">
                         <FullScreenExitIcon />
                     </Fab>
                 }

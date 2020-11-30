@@ -8,18 +8,27 @@ import DateRangeInput from '../common/DateRangeInput'
 import CategorySelect from '../common/CategorySelect'
 import SnackMsg from '../common/SnackMsg'
 import dayjs from 'dayjs'
+import { ExpenseFilter, ExpenseSummary, SelectCategory, SelectCategoryMap, SnackMsgComponent} from 'types'
+
+interface State {
+    selectCategories: SelectCategory[]
+    expenseTotals: ExpenseSummary[]
+    totalExpensesAmount: number
+    categoryMap: SelectCategoryMap
+    expandedRowIds: (string | number)[]
+}
 
 export default React.memo(function ExpenseSummary() {
-    const snackRef = useRef(null)
+    const snackRef = useRef<SnackMsgComponent>(null)
 
-    const [filter, setFilter] = useState({
+    const [filter, setFilter] = useState<ExpenseFilter>({
         categoryIds: [],
         startDate: dayjs().startOf('year').format('YYYY-MM-DD'),
         startDateMs: dayjs().startOf('year').valueOf(),
         endDate: dayjs().endOf('day').format('YYYY-MM-DD'),
         endDateMs: dayjs().endOf('day').valueOf()
     })
-    const [state, setState] = useState({
+    const [state, setState] = useState<State>({
         selectCategories: [],
         expenseTotals: [],
         totalExpensesAmount: 0,
@@ -28,12 +37,12 @@ export default React.memo(function ExpenseSummary() {
     })
 
     // Update state
-    const updateState = (newState) => {
+    const updateState = (newState: Partial<State>) => {
         setState(state => ({ ...state, ...newState }))
     }
 
     // Update filter state
-    const updateFilter = (newFilter) => {
+    const updateFilter = (newFilter : Partial<ExpenseFilter>) => {
         setFilter(filter => ({ ...filter, ...newFilter }))
     }
 
@@ -41,7 +50,7 @@ export default React.memo(function ExpenseSummary() {
     useEffect(() => {
         const getCategorySelect = () => {
             CategoryService.getCategorySelect().then((selectCategories) => {
-                const categoryMap = selectCategories.reduce((map, cat) => {
+                const categoryMap = selectCategories.reduce((map : SelectCategoryMap, cat : SelectCategory) => {
                     map[cat.value] = cat.label
                     return map
                 }, {})
@@ -51,7 +60,7 @@ export default React.memo(function ExpenseSummary() {
                 })
             }).catch((error) => {
                 console.error('Error retrieving category select:', error)
-                snackRef.current.show(true, 'Error retrieving category select data')
+                snackRef!.current!.show(true, 'Error retrieving category select data')
             })
         }        
         getCategorySelect()
@@ -60,7 +69,7 @@ export default React.memo(function ExpenseSummary() {
     // Retrieve the expense totals data on mount and whenever the user changes the filter
     useEffect(() => {
         const getExpenseTotals = () => {
-            ExpenseService.getExpenseTotals(filter).then((expenseTotals) => {                        
+            ExpenseService.getExpenseTotals(filter).then((expenseTotals : ExpenseSummary[]) => {                        
                 updateState({
                     expenseTotals: expenseTotals,
                     totalExpensesAmount: expenseTotals.reduce((sum, cat) => sum + Number(cat.totalAmount), 0),
@@ -68,15 +77,15 @@ export default React.memo(function ExpenseSummary() {
                 })
             }).catch((error) => {
                 console.error('Error retrieving expense totals:', error)
-                snackRef.current.show(true, 'Error retrieving expense summary data')
+                snackRef!.current!.show(true, 'Error retrieving expense summary data')
             })
         }
         getExpenseTotals()
     }, [filter])
 
     // Update filter state when a filter date changes
-    const handleDateChange = (startDate, startDateMs, endDate, endDateMs) => {
-        updateFilter({
+    const handleDateChange = (startDate: string, startDateMs : number, endDate : string, endDateMs : number) => {
+        updateFilter({            
             startDate: startDate,
             startDateMs: startDateMs,
             endDate: endDate,
@@ -85,7 +94,7 @@ export default React.memo(function ExpenseSummary() {
     }
 
     // Update filter state when the filter category changes
-    const handleCategoryChange = (categoryIds) => {
+    const handleCategoryChange = (categoryIds : string[]) => {
         updateFilter({ categoryIds: categoryIds })
     }
 
@@ -94,7 +103,7 @@ export default React.memo(function ExpenseSummary() {
         return (
             <div>
                 <DateRangeInput startDate={filter.startDate} endDate={filter.endDate} handleDateChange={handleDateChange} />
-                <CategorySelect selectCategories={state.selectCategories} categoryMap={state.categoryMap} handleCategoryChange={handleCategoryChange} />
+                <CategorySelect selectCategories={state.selectCategories} categoryMap={state.categoryMap} onChange={handleCategoryChange} />
             </div>
         )
     }

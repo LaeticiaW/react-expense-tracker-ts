@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react'
-import { SortingState, IntegratedSorting } from '@devexpress/dx-react-grid'
+import React, { useState, useCallback, FC } from 'react'
+import { SortingState, IntegratedSorting, Sorting, Column } from '@devexpress/dx-react-grid'
 import { Grid, TableHeaderRow, Table } from '@devexpress/dx-react-grid-material-ui'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
 import {Paper, IconButton} from '@material-ui/core'
 import DeleteIcon from '@material-ui/icons/Delete'
 import ActionCell from '../common/ActionCell'
 import ConfirmDialog from '../common/ConfirmDialog'
-import clsx from 'clsx'
+import { Import } from 'types'
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme : Theme) => createStyles({
     container: {
         height: 'calc(100vh - 260px)',
         '& > *': {            // for react grid virtualization when want table to fill container
@@ -53,7 +53,7 @@ const useStyles = makeStyles(theme => ({
     }
 }))
 
-const columns = [
+const columns : Column[] = [
     { name: 'importDate', title: 'Date' },
     { name: 'fileName', title: 'File Name' },
     { name: 'description', title: 'Description' },
@@ -61,7 +61,7 @@ const columns = [
     { name: 'actions', title: 'Actions' }
 ]
 
-const columnExtensions = [
+const columnExtensions : Table.ColumnExtension[] = [
     { columnName: 'importDate', width: '20%' },
     { columnName: 'fileName', width: '30%' },
     { columnName: 'description', width: '20%' },
@@ -69,22 +69,27 @@ const columnExtensions = [
     { columnName: 'actions', align: 'center', width: '15%' }
 ]
 
-const sortColumnExtensions = [
+const sortColumnExtensions : SortingState.ColumnExtension[] = [
     { columnName: 'actions', sortingEnabled: false }
 ]
 
-const defaultSorting = [
+const defaultSorting: Sorting[] = [
     { columnName: 'importDate', direction: 'desc' }
 ]
 
-export default React.memo(function ImportsTable({ imports, handleDelete }) {
+interface Props {
+    imports: Import[]
+    handleDelete: (imp : Import) => void
+}
+
+export default React.memo(function ImportsTable({ imports, handleDelete } : Props) {
     const classes = useStyles()
 
-    const [deleteImport, setDeleteImport] = useState({})
+    const [deleteImport, setDeleteImport] = useState<Import | null>(null)
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
 
     // Open the delete confirmation dialog
-    const confirmDelete = useCallback((importObj) => {
+    const confirmDelete = useCallback((importObj : Import) => {
         setDeleteImport(importObj)
         setConfirmDialogOpen(true)
     }, [setDeleteImport, setConfirmDialogOpen])
@@ -92,8 +97,10 @@ export default React.memo(function ImportsTable({ imports, handleDelete }) {
     // Close the confirmation dialog and delete the import
     const handleDeleteImport = useCallback(() => {
         setConfirmDialogOpen(false)
-        handleDelete(deleteImport)
-        setDeleteImport({})
+        if (deleteImport) {
+            handleDelete(deleteImport)
+        }
+        setDeleteImport(null)
     }, [setConfirmDialogOpen, handleDelete, setDeleteImport, deleteImport])
 
     // Cancel the confirmation dialog
@@ -102,7 +109,7 @@ export default React.memo(function ImportsTable({ imports, handleDelete }) {
     }, [setConfirmDialogOpen])
 
     // Table cell render function with custom actions cell
-    const Cell = React.memo((props) => {
+    const Cell : FC<Table.DataCellProps> = React.memo((props) => {
         const imp = props.row
         const columnName = props.column.name
 
@@ -110,7 +117,7 @@ export default React.memo(function ImportsTable({ imports, handleDelete }) {
             return (
                 <ActionCell>
                     <IconButton size="small" onClick={() => confirmDelete(imp)}>
-                        <DeleteIcon className={clsx(classes.icon, classes.defaultIcon)} />
+                        <DeleteIcon />
                     </IconButton>
                 </ActionCell>
             )
@@ -125,9 +132,7 @@ export default React.memo(function ImportsTable({ imports, handleDelete }) {
                     <SortingState
                         defaultSorting={defaultSorting} columnExtensions={sortColumnExtensions} />
                     <IntegratedSorting />
-                    <Table
-                        height="auto" width="auto"
-                        columnExtensions={columnExtensions} cellComponent={Cell} />
+                    <Table columnExtensions={columnExtensions} cellComponent={Cell} />
                     <TableHeaderRow showSortingControls />
                 </Grid>
             </Paper>

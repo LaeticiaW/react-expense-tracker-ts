@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react'
+import React, { useState } from 'react'
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider } from '@material-ui/core'
 import CategoryService from '../../services/category'
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
@@ -56,8 +56,8 @@ export default React.memo(function AddSubcategoryDialog({ open, onClose, categor
     }
 
     // Update state and validate the form data as the user enters values
-    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const newState: Partial<State> = { subcategoryName: event.target.value }
+    const handleChange = (value: string, name: string) => {
+        const newState: Partial<State> = { subcategoryName: value }
         validate(newState)
         updateState(newState)
     }

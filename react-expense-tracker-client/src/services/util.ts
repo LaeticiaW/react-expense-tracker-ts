@@ -23,7 +23,7 @@ export default {
      * Format an amount value
      * @param {number} value - value to format
      */
-    formatAmount(value) {
+    formatAmount(value: string | number | undefined | null) {
         if (value !== null && value !== undefined) {
             const formattedNum = numeral(value).format('0,0.00')            
             return formattedNum === 'NaN' ? null : formattedNum
@@ -36,7 +36,7 @@ export default {
      * @param {array} arr - array of objects to sort
      * @param {string} property - name of property to sort by
      */
-    sortArray(arr, property) {
+    sortArray(arr : any[], property : string) {
         arr.sort((a, b) => {
             if (a[property].toLowerCase() < b[property].toLowerCase()) {
                 return -1
@@ -52,9 +52,9 @@ export default {
      * Formats a time series shared tooltip
      * @param {object} ctx - the graph context object
      */
-    formatTimeSeriesSharedTooltip(ctx) {
+    formatTimeSeriesSharedTooltip(ctx : any) {
         // Function to get the graph line symbol
-        const getSymbol = (symbolName) => {
+        const getSymbol = (symbolName : string) => {
             let symbol = ''
             switch (symbolName) {
                 case 'circle':
@@ -87,13 +87,13 @@ export default {
         let symbolHtml
 
         // Sort the points by y value descending
-        points.sort((pointA, pointB) => pointB.y - pointA.y)
+        points.sort((pointA : any, pointB : any) => pointB.y - pointA.y)
 
         // Calculate the total of all point values
-        const totalValue = points.reduce((total, pt) => total + pt.y, 0)
+        const totalValue = points.reduce((total : number, pt : any) => total + pt.y, 0)
 
         // Create the tooltip markup for each point
-        points.forEach((point) => {
+        points.forEach((point : any) => {
             value = numeral(point.y).format('$0,0.00')
             percent = totalValue ? numeral(point.y / totalValue).format('0.00%') : 0
 

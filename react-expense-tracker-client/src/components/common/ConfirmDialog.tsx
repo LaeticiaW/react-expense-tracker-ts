@@ -11,7 +11,7 @@ const useStyles = makeStyles((theme : Theme) => createStyles({
 interface Props {
     open: boolean,
     title: string,
-    msg: String,
+    msg: string | JSX.Element,
     onConfirm: (event : MouseEvent<HTMLButtonElement>) => void,
     onCancel: () => void
 }

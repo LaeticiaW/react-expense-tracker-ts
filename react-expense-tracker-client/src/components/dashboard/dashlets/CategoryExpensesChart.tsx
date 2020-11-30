@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { makeStyles } from '@material-ui/core/styles'
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles'
 import SnackMsg from '../../common/SnackMsg'
 import Dashlet from '../Dashlet'
 import DateRangeInput from '../../common/DateRangeInput'
@@ -9,10 +9,11 @@ import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import drilldown from 'highcharts/modules/drilldown'
 import Util from '../../../services/util'
+import { DashletOptions, ExpenseSummary, SnackMsgComponent } from 'types'
 
 drilldown(Highcharts)
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme : Theme) => createStyles({
     contentContainer: {
         position: 'relative',
         height: '100%'
@@ -28,33 +29,39 @@ const useStyles = makeStyles(theme => ({
         position: 'absolute',
         bottom: '4px',
         right: '0px',
-        zIndex: '5',
+        zIndex: 5,
         opacity: 1,
         backgroundColor: '#ffffff'
     }
 }))
 
-export default React.memo(function CategoryExpensesChart({ options }) {
-    const classes = useStyles()
-    const snackRef = useRef(null)
+interface Props {
+    options: DashletOptions
+}
 
-    const [chartOptions, setChartOptions] = useState({})
+export default React.memo(function CategoryExpensesChart({ options } : Props) {
+    const classes = useStyles()
+    const snackRef = useRef<SnackMsgComponent>(null!)
+
+    const [chartOptions, setChartOptions] = useState({totalExpensesAmount: 0})
     const [filter, setFilter] = useState({
         startDate: dayjs().startOf('year').format('YYYY-MM-DD'),
         endDate: dayjs().format('YYYY-MM-DD'),
-        categoryIds: []
+        categoryIds: [] as string[]
     })
     
     // Get the Highcharts options for the time series line chart   
     const getChartOptions = useCallback((categoryTotals) => {
-        const totalExpenses = categoryTotals.reduce((sum, cat) => sum + Number(cat.totalAmount), 0)
+        const totalExpenses = categoryTotals.reduce((sum : number, cat : ExpenseSummary) => sum + Number(cat.totalAmount), 0)
 
-        const options = {
+        const options : any = {
             chart: { type: 'pie' },
-            title: { text: '' },
+            title: { text: '' },            
             tooltip: {
                 useHTML: true,
-                formatter() {
+                point: {name: '', y: 0, percentage: 0}, // hack for typescript
+                series: {name: ''}, // hack for typescript
+                formatter() : string {
                     const hdr = '<span style="font-size:11px">' + this.series.name + '</span><br>'
                     const amt = Util.formatAmount(this.point.y)
                     const pct = ` (${Util.formatAmount(this.point.percentage)}%)`
@@ -109,8 +116,8 @@ export default React.memo(function CategoryExpensesChart({ options }) {
         ExpenseService.getExpenseTotals(filter).then((categoryTotals) => {
             setChartOptions(getChartOptions(categoryTotals))
         }).catch((error) => {
-            console.error('Error retrieving expense totals:', error)
-            snackRef.current.show(true, 'Error retrieving data for Expenses by Category dashlet')
+            console.error('Error retrieving expense totals:', error)            
+            snackRef!.current!.show(true, 'Error retrieving data for Expenses by Category dashlet')            
         })
     }, [filter, getChartOptions, setChartOptions])
 
@@ -122,8 +129,8 @@ export default React.memo(function CategoryExpensesChart({ options }) {
     }, [filter, getExpenseTotals])
     
      //Format the expense data for a Highcharts time series chart   
-    const formatSeriesData = (categoryTotals) => {
-        const series = categoryTotals.map((item) => ({
+    const formatSeriesData = (categoryTotals : ExpenseSummary[]) => {
+        const series = categoryTotals.map((item : ExpenseSummary) => ({
             name: item.categoryName || 'Unknown',
             y: item.totalAmount,
             drilldown: item.categoryName || 'Unknown'
@@ -132,8 +139,8 @@ export default React.memo(function CategoryExpensesChart({ options }) {
     }
     
      // Format the expense data for the drilldown to subcategory level   
-    const formatDrillDownSeries = (categoryTotals) => {
-        const series = categoryTotals.map((item) => ({
+    const formatDrillDownSeries = (categoryTotals : ExpenseSummary[]) => {
+        const series = categoryTotals.map((item : ExpenseSummary) => ({
             name: item.categoryName,
             id: item.categoryName,
             data: item.subcategoryTotals.map((subcat) => [subcat.subcategoryName || 'Unknown', subcat.totalAmount])

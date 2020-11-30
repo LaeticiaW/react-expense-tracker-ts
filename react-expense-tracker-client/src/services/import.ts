@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { ImportFilter } from 'types'
 
 export default {
     importUrl: 'http://localhost:3000/import',
@@ -7,7 +8,7 @@ export default {
      * Retrieve the list of import summaries
      * @param {object} filter - filter values to use when retrieving import summaries
      */
-    getImports(filter) {
+    getImports(filter : ImportFilter) {
         return axios.get(this.importUrl, {
             params: {
                 startDate: filter.startDate,
@@ -26,7 +27,7 @@ export default {
      * Delete the specified import summary and all associated imported expenses
      * @param {string} importId - id of import to delete
      */
-    deleteImport(importId) {
+    deleteImport(importId : string) {
         return axios({
             url: this.importUrl + importId,
             method: 'DELETE'

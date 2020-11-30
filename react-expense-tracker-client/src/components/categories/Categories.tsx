@@ -11,7 +11,7 @@ import CategoryToolbar from './CategoryToolbar'
 import CategoryReducer, { CategoryInitialState } from './actions/categoryReducer'
 import { setCategoryData } from './actions/categoryActions'
 import { SnackMsgComponent } from 'types'
-import { CategoryContext } from './context'
+import { CategoryContext } from './CategoryContext'
 
 const useStyles = makeStyles((theme : Theme) => createStyles({
     container: {
@@ -37,14 +37,12 @@ export default React.memo(function Categories() {
     const [categoryState, categoryDispatch] = useReducer(CategoryReducer, CategoryInitialState)     
       
     // Retrieve the category data
-    const getCategories : any = useCallback(() => {             
+    const getCategories = useCallback(() => {             
         CategoryService.getCategoryInfo().then(({ categories, categoryMap, subcategoryMap }) => { 
             categoryDispatch(setCategoryData(categories, categoryMap, subcategoryMap))             
         }).catch((error) => {
-            console.error('Error retrieving categories:', error)
-            if (snackRef && snackRef.current) {
-                snackRef.current.show(true, 'Error retrieving categories')   
-            }               
+            console.error('Error retrieving categories:', error)           
+            snackRef!.current!.show(true, 'Error retrieving categories')                              
         })
     }, [])
 

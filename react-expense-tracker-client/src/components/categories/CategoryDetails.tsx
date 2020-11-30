@@ -3,7 +3,7 @@ import { Card, CardContent, Toolbar, Fab } from '@material-ui/core'
 import { Edit as EditIcon } from '@material-ui/icons'
 import { makeStyles } from '@material-ui/core/styles'
 import UpdateCategoryDialog from './UpdateCategoryDialog'
-import { CategoryContext } from './context'
+import { CategoryContext } from './CategoryContext'
 import { Category } from 'types'
 
 const useStyles = makeStyles(theme => ({
